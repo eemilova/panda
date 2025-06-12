@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Transaction DApp</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"], select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, input[type="file"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .network-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .network-input-wrapper input {
+            flex: 1;
+            margin: 0;
+        }
+
+        .token-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .token-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .decimals-field {
+            max-width: 150px;
+        }
+
+        .chainlist-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+        }
+
+        .chainlist-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+            text-decoration: none;
+            color: white;
+        }
+
+        .chainlist-btn:active {
+            transform: translateY(0);
+        }
+
+        .csv-input-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(248, 250, 252, 0.8);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+            margin: 0;
+            border-radius: 0;
+            width: auto;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .csv-input-section {
+            margin-top: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 150px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .status.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #059669;
+            border: 2px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 2px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border: 2px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .csv-preview {
+            margin-top: 20px;
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .csv-preview h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .csv-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .csv-preview th, .csv-preview td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .csv-preview th {
+            background: rgba(102, 126, 234, 0.1);
+            font-weight: 600;
+            color: #333;
+        }
+
+        .wallet-info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .network-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+    
+        .license-info {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐼 Batch Transaction DApp</h1>
+        
+        <div id="walletInfo" class="wallet-info" style="display: none;">
+            <strong>Connected Wallet:</strong> <span id="walletAddress"></span>
+            <div id="currentNetwork" style="margin-top: 5px; font-size: 0.9rem;"></div>
+        </div>
+
+        <form id="batchForm">
+            <div class="form-group">
+                <label for="assetType">Asset Type:</label>
+                <select id="assetType">
+                    <option value="native">Native Asset (ETH/MATIC/BNB)</option>
+                    <option value="token">ERC-20 Token</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="tokenContractGroup">
+                <label for="tokenContract">Token Contract Address:</label>
+                <div class="network-input-wrapper">
+                    <input type="text" id="tokenContract" placeholder="0x...">
+                    <a href="https://www.coingecko.com/en" target="_blank" class="chainlist-btn" title="Check token on CoinGecko">
+                        🦎 CoinGecko
+                    </a>
+                </div>
+                <div class="help-text">Enter the ERC-20 token contract address</div>
+            </div>
+
+            <div class="form-group" id="tokenDecimalsGroup">
+                <label for="tokenDecimals">Token Decimals:</label>
+                <input type="number" id="tokenDecimals" value="18" min="0" max="77" placeholder="18">
+                <div class="help-text">Number of decimal places for this token (most tokens use 18, USDC/USDT use 6)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="networkId">Network ID:</label>
+                <div class="network-input-wrapper">
+                    <input type="number" id="networkId" placeholder="1" required>
+                    <a href="https://chainlist.org" target="_blank" class="chainlist-btn" title="View Network IDs on Chainlist">
+                        🔗 Chain List
+                    </a>
+                </div>
+                <div class="help-text">1 = Ethereum, 137 = Polygon, 56 = BSC, 42161 = Arbitrum, 10 = Optimism</div>
+                <div id="networkWarning" class="network-warning" style="display: none;"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="csvInput">CSV Data:</label>
+                <div class="csv-input-tabs">
+                    <button type="button" id="uploadTab" class="tab-button active">📁 Upload File</button>
+                    <button type="button" id="pasteTab" class="tab-button">📝 Paste CSV</button>
+                </div>
+                
+                <div id="uploadSection" class="csv-input-section">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="csvFile" accept=".csv">
+                        <label for="csvFile" class="file-input-label">
+                            📁 Choose CSV File
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="pasteSection" class="csv-input-section" style="display: none;">
+                    <textarea id="csvTextarea" placeholder="Paste your data here (one per line)...
+Example:
+0x1234...,100
+0x5678...,50.5
+0xabcd...,25.75" rows="8"></textarea>
+                </div>
+                
+                <div class="help-text">Both upload and paste: address,amount per line (no headers needed)</div>
+            </div>
+
+            <button type="button" id="connectWallet">Connect Wallet</button>
+            <button type="button" id="switchNetwork" style="display: none;">Switch to Target Network</button>
+            <button type="submit" id="submitBtn" disabled>Execute Batch Transactions</button>
+        </form>
+
+        <div id="csvPreview" class="csv-preview" style="display: none;">
+            <h3>CSV Preview:</h3>
+            <div id="previewContent"></div>
+        </div>
+
+        <div id="status" class="status"></div>
+    
+<footer style="margin-top: 40px; text-align: center; font-size: 0.85rem; color: #555;">
+    <p><strong>⚠️ Disclaimer:</strong> This application is provided "as is" under the MIT License. Use at your own risk. Always verify transaction details before executing. The developers are not responsible for any losses or damages.</p>
+    <p class="license-info">Open source software licensed under MIT License. No warranties provided.</p>
+</footer>
+
+</div>
+
+    <script>
+        let csvData = [];
+        let connectedAccount = null;
+        let currentChainId = null;
+
+        // ERC-20 Transfer Function Selector
+        const TRANSFER_SELECTOR = '0xa9059cbb';
+
+        // Network names mapping
+        const NETWORK_NAMES = {
+            '1': 'Ethereum Mainnet',
+            '137': 'Polygon',
+            '56': 'BSC',
+            '42161': 'Arbitrum One',
+            '10': 'Optimism',
+            '5': 'Goerli Testnet',
+            '11155111': 'Sepolia Testnet',
+            '80001': 'Polygon Mumbai',
+        };
+
+        // DOM Elements
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const switchNetworkBtn = document.getElementById('switchNetwork');
+        const submitBtn = document.getElementById('submitBtn');
+        const csvFileInput = document.getElementById('csvFile');
+        const csvTextarea = document.getElementById('csvTextarea');
+        const uploadTab = document.getElementById('uploadTab');
+        const pasteTab = document.getElementById('pasteTab');
+        const uploadSection = document.getElementById('uploadSection');
+        const pasteSection = document.getElementById('pasteSection');
+        const assetType = document.getElementById('assetType');
+        const tokenContractGroup = document.getElementById('tokenContractGroup');
+        const tokenDecimalsGroup = document.getElementById('tokenDecimalsGroup');
+        const statusDiv = document.getElementById('status');
+        const csvPreview = document.getElementById('csvPreview');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletAddress = document.getElementById('walletAddress');
+        const currentNetwork = document.getElementById('currentNetwork');
+        const networkIdInput = document.getElementById('networkId');
+        const networkWarning = document.getElementById('networkWarning');
+
+        // Asset type change handler
+        assetType.addEventListener('change', () => {
+            const isToken = assetType.value === 'token';
+            tokenContractGroup.style.display = isToken ? 'block' : 'none';
+            tokenDecimalsGroup.style.display = isToken ? 'block' : 'none';
+            document.getElementById('tokenContract').required = isToken;
+        });
+
+        // Network ID change handler
+        networkIdInput.addEventListener('input', checkNetworkMatch);
+
+        // Initially hide token-specific fields
+        tokenContractGroup.style.display = 'none';
+        tokenDecimalsGroup.style.display = 'none';
+
+        // Tab switching
+        uploadTab.addEventListener('click', () => {
+            uploadTab.classList.add('active');
+            pasteTab.classList.remove('active');
+            uploadSection.style.display = 'block';
+            pasteSection.style.display = 'none';
+        });
+
+        pasteTab.addEventListener('click', () => {
+            pasteTab.classList.add('active');
+            uploadTab.classList.remove('active');
+            uploadSection.style.display = 'none';
+            pasteSection.style.display = 'block';
+        });
+
+        // Connect Wallet
+        connectWalletBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum === 'undefined') {
+                showStatus('Please install MetaMask or another Web3 wallet!', 'error');
+                return;
+            }
+
+            try {
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+                
+                connectedAccount = accounts[0];
+                
+                // Get current chain ID
+                currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+                
+                updateWalletInfo();
+                connectWalletBtn.textContent = 'Wallet Connected ✅';
+                connectWalletBtn.disabled = true;
+                
+                updateSubmitButton();
+                showStatus('Wallet connected successfully!', 'success');
+                checkNetworkMatch();
+            } catch (error) {
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        });
+
+        // Switch Network Button
+        switchNetworkBtn.addEventListener('click', async () => {
+            const targetNetworkId = networkIdInput.value;
+            if (!targetNetworkId) {
+                showStatus('Please enter a network ID first', 'error');
+                return;
+            }
+
+            await switchToNetwork(parseInt(targetNetworkId));
+        });
+
+        // Switch to Network Function
+        async function switchToNetwork(chainId) {
+            try {
+                const hexChainId = '0x' + chainId.toString(16);
+                
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: hexChainId }],
+                });
+                
+                showStatus(`Switched to network ${chainId} successfully!`, 'success');
+            } catch (error) {
+                if (error.code === 4902) {
+                    showStatus('Network not found in wallet. Please add it manually.', 'error');
+                } else {
+                    showStatus('Failed to switch network: ' + error.message, 'error');
+                }
+                console.error('Switch network error:', error);
+            }
+        }
+
+        // Update wallet info display
+        function updateWalletInfo() {
+            if (connectedAccount) {
+                walletAddress.textContent = `${connectedAccount.slice(0, 6)}...${connectedAccount.slice(-4)}`;
+                
+                if (currentChainId) {
+                    const chainIdDecimal = parseInt(currentChainId, 16).toString();
+                    const networkName = NETWORK_NAMES[chainIdDecimal] || `Chain ID ${chainIdDecimal}`;
+                    currentNetwork.textContent = `Current Network: ${networkName} (${chainIdDecimal})`;
+                }
+                
+                walletInfo.style.display = 'block';
+            }
+        }
+
+        // Check if current network matches target network
+        function checkNetworkMatch() {
+            const targetNetworkId = networkIdInput.value;
+            
+            if (!currentChainId || !targetNetworkId) {
+                networkWarning.style.display = 'none';
+                switchNetworkBtn.style.display = 'none';
+                return;
+            }
+
+            const currentChainIdDecimal = parseInt(currentChainId, 16);
+            const targetChainIdDecimal = parseInt(targetNetworkId);
+
+            if (currentChainIdDecimal !== targetChainIdDecimal) {
+                const targetNetworkName = NETWORK_NAMES[targetNetworkId] || `Chain ID ${targetNetworkId}`;
+                networkWarning.textContent = `⚠️ Your wallet is on chain ${currentChainIdDecimal}, but you've selected chain ${targetNetworkId} (${targetNetworkName}). Switch networks before executing transactions.`;
+                networkWarning.style.display = 'block';
+                switchNetworkBtn.style.display = 'block';
+                switchNetworkBtn.textContent = `Switch to ${targetNetworkName}`;
+            } else {
+                networkWarning.style.display = 'none';
+                switchNetworkBtn.style.display = 'none';
+            }
+        }
+
+        // Listen for network changes
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('chainChanged', (chainId) => {
+                currentChainId = chainId;
+                updateWalletInfo();
+                checkNetworkMatch();
+                showStatus(`Network changed to ${parseInt(chainId, 16)}`, 'info');
+            });
+
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    connectedAccount = null;
+                    walletInfo.style.display = 'none';
+                    connectWalletBtn.textContent = 'Connect Wallet';
+                    connectWalletBtn.disabled = false;
+                    updateSubmitButton();
+                } else {
+                    connectedAccount = accounts[0];
+                    updateWalletInfo();
+                    updateSubmitButton();
+                }
+            });
+        }
+
+        // CSV Textarea Handler
+        csvTextarea.addEventListener('input', () => {
+            const csvText = csvTextarea.value.trim();
+            if (!csvText) {
+                csvData = [];
+                csvPreview.style.display = 'none';
+                updateSubmitButton();
+                return;
+            }
+
+            // Parse simple comma-separated format (no headers)
+            const lines = csvText.split('\n').filter(line => line.trim());
+            const parsedData = [];
+
+            try {
+                lines.forEach((line, index) => {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) return;
+
+                    const parts = trimmedLine.split(',');
+                    if (parts.length !== 2) {
+                        throw new Error(`Line ${index + 1}: Expected 2 values (address,amount), got ${parts.length}`);
+                    }
+
+                    const address = parts[0].trim();
+                    const amount = parts[1].trim();
+
+                    if (!address || !amount) {
+                        throw new Error(`Line ${index + 1}: Address or amount is empty`);
+                    }
+
+                    if (!address.startsWith('0x') || address.length !== 42) {
+                        throw new Error(`Line ${index + 1}: Invalid address format`);
+                    }
+
+                    if (isNaN(parseFloat(amount))) {
+                        throw new Error(`Line ${index + 1}: Invalid amount format`);
+                    }
+
+                    parsedData.push({
+                        address: address,
+                        amount: amount
+                    });
+                });
+
+                csvData = parsedData;
+                displayCsvPreview(csvData);
+                updateSubmitButton();
+                
+                // Clear any previous error
+                if (parsedData.length > 0) {
+                    showStatus(`Parsed ${parsedData.length} transactions successfully`, 'success');
+                }
+            } catch (error) {
+                showStatus('Parse error: ' + error.message, 'error');
+                csvData = [];
+                csvPreview.style.display = 'none';
+                updateSubmitButton();
+            }
+        });
+
+        // CSV File Handler
+        csvFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                csvData = [];
+                csvPreview.style.display = 'none';
+                updateSubmitButton();
+                document.querySelector('.file-input-label').textContent = '📁 Choose CSV File';
+                return;
+            }
+
+            Papa.parse(file, {
+                header: false, // Parse without headers
+                skipEmptyLines: true,
+                complete: (results) => {
+                    try {
+                        const parsedData = [];
+                        
+                        results.data.forEach((row, index) => {
+                            if (row.length !== 2) {
+                                throw new Error(`Row ${index + 1}: Expected 2 values (address,amount), got ${row.length}`);
+                            }
+
+                            const address = row[0].trim();
+                            const amount = row[1].trim();
+
+                            if (!address || !amount) {
+                                throw new Error(`Row ${index + 1}: Address or amount is empty`);
+                            }
+
+                            if (!address.startsWith('0x') || address.length !== 42) {
+                                throw new Error(`Row ${index + 1}: Invalid address format`);
+                            }
+
+                            if (isNaN(parseFloat(amount))) {
+                                throw new Error(`Row ${index + 1}: Invalid amount format`);
+                            }
+
+                            parsedData.push({
+                                address: address,
+                                amount: amount
+                            });
+                        });
+
+                        csvData = parsedData;
+                        displayCsvPreview(csvData);
+                        updateSubmitButton();
+                        
+                        // Update file label and show success
+                        document.querySelector('.file-input-label').textContent = `📁 ${file.name} (${csvData.length} rows)`;
+                        showStatus(`File uploaded: ${csvData.length} transactions parsed successfully`, 'success');
+                        
+                        // Clear textarea when file is uploaded
+                        csvTextarea.value = '';
+                    } catch (error) {
+                        showStatus('File parse error: ' + error.message, 'error');
+                        csvData = [];
+                        csvPreview.style.display = 'none';
+                        updateSubmitButton();
+                    }
+                },
+                error: (error) => {
+                    showStatus('Error reading file: ' + error.message, 'error');
+                }
+            });
+        });
+
+        // Display CSV Preview
+        function displayCsvPreview(data) {
+            if (data.length === 0) return;
+
+            const previewContent = document.getElementById('previewContent');
+            const headers = Object.keys(data[0]);
+            
+            let tableHTML = '<table><thead><tr>';
+            headers.forEach(header => {
+                tableHTML += `<th>${header}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+
+            // Show first 5 rows
+            data.slice(0, 5).forEach(row => {
+                tableHTML += '<tr>';
+                headers.forEach(header => {
+                    tableHTML += `<td>${row[header] || ''}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+
+            if (data.length > 5) {
+                tableHTML += `<tr><td colspan="${headers.length}">... and ${data.length - 5} more rows</td></tr>`;
+            }
+
+            tableHTML += '</tbody></table>';
+            previewContent.innerHTML = tableHTML;
+            csvPreview.style.display = 'block';
+        }
+
+        // Update Submit Button State
+        function updateSubmitButton() {
+            submitBtn.disabled = !connectedAccount || csvData.length === 0;
+        }
+
+        // Form Submit Handler
+        document.getElementById('batchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const selectedAssetType = assetType.value;
+            const tokenContract = document.getElementById('tokenContract').value;
+            const tokenDecimals = parseInt(document.getElementById('tokenDecimals').value) || 18;
+            const networkId = parseInt(networkIdInput.value);
+
+            if (!networkId) {
+                showStatus('Please enter network ID', 'error');
+                return;
+            }
+
+            if (selectedAssetType === 'token' && !tokenContract) {
+                showStatus('Please enter token contract address for ERC-20 transfers', 'error');
+                return;
+            }
+
+            if (csvData.length === 0) {
+                showStatus('Please upload a CSV file or paste data', 'error');
+                return;
+            }
+
+            // Check if we're on the correct network
+            const currentChainIdDecimal = parseInt(currentChainId, 16);
+            if (currentChainIdDecimal !== networkId) {
+                showStatus(`Please switch to network ${networkId} before executing transactions`, 'error');
+                return;
+            }
+
+            await executeBatchTransactions(selectedAssetType, tokenContract, tokenDecimals, networkId);
+        });
+
+        // Execute Batch Transactions
+        async function executeBatchTransactions(assetType, tokenContract, tokenDecimals, networkId) {
+            try {
+                showStatus('Preparing batch transactions...', 'info');
+                
+                // Validate CSV data
+                const requiredColumns = ['address', 'amount'];
+                if (!csvData[0] || !csvData[0].address || !csvData[0].amount) {
+                    showStatus('Invalid data format: missing address or amount columns', 'error');
+                    return;
+                }
+
+                // Build transaction calls based on asset type
+                const calls = csvData.map(row => {
+                    const toAddress = row.address;
+                    const amount = row.amount;
+
+                    if (!toAddress || !amount) {
+                        throw new Error('Invalid row data: missing address or amount');
+                    }
+
+                    if (assetType === 'native') {
+                        // Native asset transfer (ETH/MATIC/BNB) - always 18 decimals
+                        const amountWei = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, 18))).toString(16);
+                        
+                        return {
+                            to: toAddress,
+                            data: '0x',
+                            value: '0x' + amountWei
+                        };
+                    } else {
+                        // ERC-20 token transfer - use custom decimals
+                        const amountWei = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, tokenDecimals))).toString(16);
+                        const paddedAmount = amountWei.padStart(64, '0');
+                        const paddedAddress = toAddress.replace('0x', '').padStart(64, '0');
+
+                        return {
+                            to: tokenContract,
+                            data: TRANSFER_SELECTOR + paddedAddress + paddedAmount,
+                            value: '0x0'
+                        };
+                    }
+                });
+
+                const assetName = assetType === 'native' ? 'native asset' : `token (${tokenDecimals} decimals)`;
+                showStatus(`Sending ${calls.length} ${assetName} transactions to wallet...`, 'info');
+
+                // Ensure we're using the correct chainId format
+                const hexChainId = '0x' + networkId.toString(16);
+                
+                console.log('Sending batch transaction with params:', {
+                    version: '1.0',
+                    chainId: hexChainId,
+                    from: connectedAccount,
+                    calls: calls
+                });
+
+                // Send batch transaction using wallet_sendCalls
+                const result = await window.ethereum.request({
+                    method: 'wallet_sendCalls',
+                    params: [{
+                        version: '1.0',
+                        chainId: hexChainId,
+                        from: connectedAccount,
+                        calls: calls
+                    }]
+                });
+
+                showStatus(`Batch transaction sent successfully! Bundle ID: ${result}`, 'success');
+                
+            } catch (error) {
+                console.error('Batch transaction error:', error);
+                showStatus('Error executing batch transactions: ' + error.message, 'error');
+            }
+        }
+
+        // Show Status Message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type} show`;
+            
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        // Check if wallet is already connected
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.request({ method: 'eth_accounts' })
+                .then(accounts => {
+                    if (accounts.length > 0) {
+                        connectedAccount = accounts[0];
+                        
+                        // Get current chain ID
+                        window.ethereum.request({ method: 'eth_chainId' })
+                            .then(chainId => {
+                                currentChainId = chainId;
+                                updateWalletInfo();
+                                connectWalletBtn.textContent = 'Wallet Connected ✅';
+                                connectWalletBtn.disabled = true;
+                                updateSubmitButton();
+                                checkNetworkMatch();
+                            });
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
